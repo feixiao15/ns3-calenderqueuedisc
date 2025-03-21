@@ -1,0 +1,1 @@
+#include "/home/lyj/whj/ns-allinone-3.43/ns-3.43/src/wifi/model/rate-control/aparf-wifi-manager.h"

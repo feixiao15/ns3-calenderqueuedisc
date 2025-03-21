@@ -1,0 +1,6 @@
+build/
+cmake-cache/
+*.so
+*.gch
+*.o
+*.log

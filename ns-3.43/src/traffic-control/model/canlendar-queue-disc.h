@@ -77,6 +77,7 @@
      Time m_rotationInterval;
      uint32_t maxQueueSize;
      std::vector<uint32_t> m_Bytesbudget; 
+     std::vector<uint32_t> remain_processing_time;
  };
  
  /**

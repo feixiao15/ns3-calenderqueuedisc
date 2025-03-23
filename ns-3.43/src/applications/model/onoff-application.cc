@@ -311,7 +311,6 @@ OnOffApplication::ScheduleNextTx()
         Time nextTime(
             Seconds(bits / static_cast<double>(m_cbrRate.GetBitRate()))); // Time till next packet
         NS_LOG_LOGIC("nextTime = " << nextTime.As(Time::S));
-        Time nextTime1(Seconds(0.01));
         m_sendEvent = Simulator::Schedule(nextTime, &OnOffApplication::SendPacket, this);
     }
     else
@@ -371,7 +370,6 @@ OnOffApplication::SendPacket()
     else
     {
         packet = Create<Packet>(m_pktSize);
-        // 如果 packet 中已经存在 MyHeader，则不再添加
         FlowTypeTag flowTag;
   
         Ptr<UniformRandomVariable> uv = CreateObject<UniformRandomVariable>();
@@ -421,6 +419,7 @@ OnOffApplication::SendPacket()
     NS_LOG_INFO("Added tag to packet: FlowType=" 
                 << (flowTag.GetType() == FlowTypeTag::PREFILL ? "PREFILL" : "DECODE")
                 << ", Deadline=" << ddlTag.GetDeadline() << "s");
+    
 
     int actual = m_socket->Send(packet);
     NS_LOG_INFO("SEND packet");

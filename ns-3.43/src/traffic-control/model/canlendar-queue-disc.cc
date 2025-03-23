@@ -114,34 +114,9 @@ CanlendarQueueDisc::GetBandForPriority(uint8_t prio) const
      uint32_t band;
      uint32_t bdelay;
  
-    //  int32_t ret = Classify(item);
- 
-    //  if (ret == PacketFilter::PF_NO_MATCH)
-    //  {
-    //      NS_LOG_DEBUG("No filter has been able to classify this packet, using priomap.");
- 
-    //      SocketPriorityTag priorityTag;
-    //      if (item->GetPacket()->PeekPacketTag(priorityTag))
-    //      {   
-    //          NS_LOG_LOGIC("prio:"<<priorityTag.GetPriority());
-    //          band = m_prio2band[priorityTag.GetPriority() & 0x0f];
-    //      }
-    //  }
-    //  else
-    //  {
-    //      NS_LOG_DEBUG("Packet filters returned " << ret);
- 
-    //      if (ret >= 0 && static_cast<uint32_t>(ret) < GetNQueueDiscClasses())
-    //      {
-    //          band = ret;
-    //      }
-    //}
-    // 获取目标队列
-
- 
      NS_ASSERT_MSG(band < GetNQueueDiscClasses(), "Selected band out of range");
      band = m_rotationOffset; //current round
-
+     uint32_t queueSizeBefore = GetQueueDiscClass(band)->GetQueueDisc()->GetNPackets(); // 记录入队前的队列长度
      uint32_t packetSize = item->GetPacket()->GetSize();
      uint32_t csize = GetQueueDiscClass(band)->GetQueueDisc()->GetNBytes();
      NS_LOG_LOGIC("current size: "<< csize<<" size " << GetMaxSize().GetValue());
@@ -166,119 +141,27 @@ CanlendarQueueDisc::GetBandForPriority(uint8_t prio) const
     //     }
     //     NS_LOG_WARN("Queue is full! Moving packet to next queue."<<(band+1));
     // }
-    //  MyHeader header;
-    //  bool hasHeader = item->GetPacket()->PeekHeader(header);
-    //  item->GetPacket()->Print(std::cout);
-    //  if(hasHeader)
-    //  {
-    //      FlowType flowtype = header.GetFlowType();
-    //      DeadlineType ddltype = header.GetDeadline();
-
-    //      NS_LOG_INFO("Packet header info: FlowType = " 
-    //         << (flowtype == ns3::PREFILL ? "PREFILL" : "DECODE")
-    //         << ", Deadline = " << ddltype << "s");
-    //     //prefill
-    //     if (flowtype ==FlowType::PREFILL)
-    //     {
-    //         for (uint32_t i = 0; i < GetNQueueDiscClasses(); i++){
-    //             band = (i + m_rotationOffset) % GetNQueueDiscClasses();
-    //             if (m_Bytesbudget[band] + item->GetSize() <= GetMaxSize().GetValue())
-    //             {
-
-    //                 bool retval = GetQueueDiscClass(band)->GetQueueDisc()->Enqueue(item);
-    //                 uint32_t queueSizeAfter = GetQueueDiscClass(band)->GetQueueDisc()->GetNPackets();
-    //                 m_Bytesbudget[band] +=  item->GetSize();
-
-    //                 NS_LOG_LOGIC("ttt " << ttt);
-    //                 NS_LOG_LOGIC("Packet enqueued to band " << band
-    //                     << ". Queue size: " << queueSizeBefore << " -> " << queueSizeAfter
-    //                     << " packet size: " << packetSize
-    //                     <<" time now:"<< rotation_time
-    //                     <<" bytebudget:" << m_Bytesbudget[band]
-    //                     <<"type: preill"
-    //                     << "). Success: " << retval);
-    //                     return retval;
-    //             }
-    //             NS_LOG_WARN("Queue is full! Moving packet to next queue."<<(band+1));
-    //         }
-    //     }
-    //     else if(flowtype == FlowType::DECODE)
-    //     {
-    //         uint32_t ddl = header.GetDeadlineValue();
-    //         band += (ddl - 1) % GetNQueueDiscClasses();
-    //         for (uint32_t i = 0; i < GetNQueueDiscClasses(); i++){
-    //             band = (i + m_rotationOffset) % GetNQueueDiscClasses();
-    //             NS_LOG_LOGIC("omve to band"<<band);
-    //             if (m_Bytesbudget[band] + item->GetSize() <= GetMaxSize().GetValue())
-    //             {
-
-    //                 bool retval = GetQueueDiscClass(band)->GetQueueDisc()->Enqueue(item);
-    //                 uint32_t queueSizeAfter = GetQueueDiscClass(band)->GetQueueDisc()->GetNPackets();
-    //                 m_Bytesbudget[band] +=  item->GetSize();
-
-    //                 NS_LOG_LOGIC("ttt " << ttt);
-    //                 NS_LOG_LOGIC("Packet enqueued to band " << band
-    //                     << ". Queue size: " << queueSizeBefore << " -> " << queueSizeAfter
-    //                     << " packet size: " << packetSize
-    //                     <<" time now:"<< rotation_time
-    //                     <<" bytebudget:" << m_Bytesbudget[band]
-    //                     <<"type: decode"
-    //                     <<"ddl: "<<ddl
-    //                     << "). Success: " << retval);
-    //                     return retval;
-    //             }
-    //             // note the packet is overtime
-    //             NS_LOG_WARN("Queue is full! Moving packet to next queue."<<(band+1));
-    //         }
-    //     }
-    //     else
-    //     {
-    //         for (uint32_t i = 0; i < GetNQueueDiscClasses(); i++){
-    //             band = (i + m_rotationOffset) % GetNQueueDiscClasses();
-    //             if (m_Bytesbudget[band] + item->GetSize() <= GetMaxSize().GetValue())
-    //             {
-
-    //                 bool retval = GetQueueDiscClass(band)->GetQueueDisc()->Enqueue(item);
-    //                 uint32_t queueSizeAfter = GetQueueDiscClass(band)->GetQueueDisc()->GetNPackets();
-    //                 m_Bytesbudget[band] +=  item->GetSize();
-
-    //                 NS_LOG_LOGIC("ttt " << ttt);
-    //                 NS_LOG_LOGIC("Packet enqueued to band " << band
-    //                     << ". Queue size: " << queueSizeBefore << " -> " << queueSizeAfter
-    //                     << " packet size: " << packetSize
-    //                     <<" time now:"<< rotation_time
-    //                     <<" bytebudget:" << m_Bytesbudget[band]
-    //                     << "). Success: " << retval);
-    //                     return retval;
-    //             }
-    //             NS_LOG_WARN("Queue is full! Moving packet to next queue."<<(band+1));
-    //         }
-    //         NS_LOG_INFO("flowtype raw value: " << flowtype);
-
-    //     }
-    // }
-    // else
-    // {
-    //      NS_LOG_INFO("No header");
-         
-        
-    // }
     FlowTypeTag flowtype;
     DeadlineTag ddl;
     bool hastypetag = item->GetPacket()->PeekPacketTag(flowtype);
     bool hasddltag = item->GetPacket()->PeekPacketTag(ddl);
+    Time current_enqueue_time = Simulator::Now();
+    Time processing_time = Seconds(packetSize*8/(2*10e6));
     if (hastypetag && hasddltag)
     {
         NS_LOG_INFO("flowtype: "<<flowtype.GetType());
         NS_LOG_INFO("ddl: "<<ddl.GetDeadline());
         if(flowtype.GetType()==FlowTypeTag::PREFILL)
         {
-            for (uint32_t i = 0; i < GetNQueueDiscClasses(); i++){
+            for (uint32_t i = 0; i < GetNQueueDiscClasses(); i++)
+            {
                 band = (i + m_rotationOffset) % GetNQueueDiscClasses();
-                if (m_Bytesbudget[band] + item->GetSize() <= GetMaxSize().GetValue())
+                NS_LOG_INFO("ct: "<<current_enqueue_time<<" remain_processing_time:"<<remain_processing_time[band]);
+                if (m_Bytesbudget[band] + item->GetSize() <= GetMaxSize().GetValue()&&current_enqueue_time+Seconds(remain_processing_time[band])+processing_time<rotation_time+Seconds(1))
                 {
-                    uint32_t queueSizeBefore = GetQueueDiscClass(band)->GetQueueDisc()->GetNPackets(); // 记录入队前的队列长度
                     bool retval = GetQueueDiscClass(band)->GetQueueDisc()->Enqueue(item);
+                    NS_LOG_INFO("need time:"<<packetSize*8/(2*10e6));
+                    remain_processing_time[band] += packetSize*8/(2*10e6);
                     uint32_t queueSizeAfter = GetQueueDiscClass(band)->GetQueueDisc()->GetNPackets();
                     m_Bytesbudget[band] +=  item->GetSize();
 
@@ -289,35 +172,38 @@ CanlendarQueueDisc::GetBandForPriority(uint8_t prio) const
                         <<" time now:"<< rotation_time
                         <<" bytebudget:" << m_Bytesbudget[band]
                         <<"flowtype"<<(flowtype.GetType() == FlowTypeTag::PREFILL ? "PREFILL" : "DECODE")
+                        <<" remainprocessing time "<<remain_processing_time[band]
                         << "). Success: " << retval);
                         return retval;
                 }
                 NS_LOG_WARN("Queue is full! Moving packet to next queue."<<(band+1));
             }
+ 
         }
         else if(flowtype.GetType()==FlowTypeTag::DECODE)
         {
             for (uint32_t i = 0; i < GetNQueueDiscClasses(); i++)
             {
+                band = (i + m_rotationOffset) % GetNQueueDiscClasses();
+                if (m_Bytesbudget[band] + item->GetSize() <= GetMaxSize().GetValue()&&current_enqueue_time+Seconds(remain_processing_time[band])+processing_time<rotation_time+Seconds(1))
+                {
                 band = (i + m_rotationOffset+ddl.GetDeadline() - 1) % GetNQueueDiscClasses();
                 NS_LOG_LOGIC("move to band"<<band);
-                if (m_Bytesbudget[band] + item->GetSize() <= GetMaxSize().GetValue())
-                {
-                    uint32_t queueSizeBefore = GetQueueDiscClass(band)->GetQueueDisc()->GetNPackets(); // 记录入队前的队列长度
-                    bool retval = GetQueueDiscClass(band)->GetQueueDisc()->Enqueue(item);
-                    uint32_t queueSizeAfter = GetQueueDiscClass(band)->GetQueueDisc()->GetNPackets();
-                    m_Bytesbudget[band] +=  item->GetSize();
-
-                    NS_LOG_LOGIC("rotation times " << ttt);
-                    NS_LOG_LOGIC("Packet enqueued to band " << band
-                        << ". Queue size: " << queueSizeBefore << " -> " << queueSizeAfter
-                        << " packet size: " << packetSize
-                        <<" time now:"<< rotation_time
-                        <<" bytebudget:" << m_Bytesbudget[band]
-                        <<"type: decode"
-                        <<"ddl: "<<ddl.GetDeadline()<<"s"
-                        << "). Success: " << retval);
-                        return retval;
+                bool retval = GetQueueDiscClass(band)->GetQueueDisc()->Enqueue(item);
+                uint32_t queueSizeAfter = GetQueueDiscClass(band)->GetQueueDisc()->GetNPackets();
+                m_Bytesbudget[band] +=  item->GetSize();
+                remain_processing_time[band] += packetSize*8/(2*10e6);
+                NS_LOG_LOGIC("rotation times " << ttt);
+                NS_LOG_INFO("Packet enqueued to band " << band
+                    << ". Queue size: " << queueSizeBefore << " -> " << queueSizeAfter
+                    << " packet size: " << packetSize
+                    <<" time now:"<< rotation_time
+                    <<" bytebudget:" << m_Bytesbudget[band]
+                    <<" type: decode"
+                    <<" ddl: "<<ddl.GetDeadline()<<"s"
+                    <<" remainprocessing time "<<remain_processing_time[band]
+                    << "). Success: " << retval);
+                    return retval;
                 }
                 // note the packet is overtime
                 NS_LOG_WARN("Queue is full! Moving packet to next queue."<<(band+1));
@@ -327,9 +213,10 @@ CanlendarQueueDisc::GetBandForPriority(uint8_t prio) const
     else
     {
     NS_LOG_INFO("NO TAGS");
+
     }
-    
-}
+ 
+ }
  
  Ptr<QueueDiscItem>
  CanlendarQueueDisc::DoDequeue()
@@ -338,36 +225,38 @@ CanlendarQueueDisc::GetBandForPriority(uint8_t prio) const
  
      Ptr<QueueDiscItem> item;
      uint32_t band = m_rotationOffset;
-    //  for (uint32_t i = 0; i < GetNQueueDiscClasses(); i++)
-    //  {
+     for (uint32_t i = 0; i < GetNQueueDiscClasses(); i++)
+     {
          
-    //      band = (i + m_rotationOffset) % GetNQueueDiscClasses();
-    //      if ((item = GetQueueDiscClass(i)->GetQueueDisc()->Dequeue()))
-    //      {   
-    //          NS_LOG_LOGIC(i);
-    //          uint32_t csize = GetQueueDiscClass(band)->GetQueueDisc()->GetNBytes();
-    //          NS_LOG_LOGIC("Popped from band " << i << ": " << item);
-    //          NS_LOG_LOGIC("Number packets band "
-    //                       << i << ": " << GetQueueDiscClass(i)->GetQueueDisc()->GetNPackets()
-    //                       <<" current size: "<< csize
-    //                       <<" band: "<< band);
-    //          return item;
-    //      }
-    //  }
-     if ((item = GetQueueDiscClass(band)->GetQueueDisc()->Dequeue()))
+         band = (i + m_rotationOffset) % GetNQueueDiscClasses();
+         if ((item = GetQueueDiscClass(band)->GetQueueDisc()->Dequeue()))
          {   
              uint32_t csize = GetQueueDiscClass(band)->GetQueueDisc()->GetNBytes();
-             uint32_t queueSizeAfter = GetQueueDiscClass(band)->GetQueueDisc()->GetNPackets();
-             NS_LOG_LOGIC("Popped from band " << band << ": " << item);
-             NS_LOG_LOGIC("Number packets band "
-                          << band << ": " << GetQueueDiscClass(band)->GetQueueDisc()->GetNPackets()
-                          <<" bytebudget: "<< m_Bytesbudget[band]
-                          <<"remain packets: "<<queueSizeAfter
-             );
+             uint32_t packetSize = item->GetPacket()->GetSize();
+             remain_processing_time[band] -= packetSize*8/(2*10e6);
+             NS_LOG_INFO("Popped from band " << i << ": " << item);
+             NS_LOG_INFO("Number packets band "
+                          << band << ": " << GetQueueDiscClass(i)->GetQueueDisc()->GetNPackets()
+                          <<" current size: "<< csize
+                          <<" packetsize: "<< packetSize);
              return item;
          }
-     NS_LOG_LOGIC("Queue empty!!!!band:"<<m_rotationOffset);
+   
+     }
+     NS_LOG_LOGIC("Queue empty!!!! band:"<<band);
      return item;
+    //  if ((item = GetQueueDiscClass(band)->GetQueueDisc()->Dequeue()))
+    //      {   
+    //          uint32_t csize = GetQueueDiscClass(band)->GetQueueDisc()->GetNBytes();
+    //          NS_LOG_LOGIC("Popped from band " << band << ": " << item);
+    //          NS_LOG_LOGIC("Number packets band "
+    //                       << band << ": " << GetQueueDiscClass(band)->GetQueueDisc()->GetNPackets()
+    //                       <<" bytebudget: "<< m_Bytesbudget[band]
+    //          );
+    //          return item;
+    //      }
+    //  NS_LOG_LOGIC("Queue empty!!!!"<<m_rotationOffset);
+    //  return item;
  }
  
  Ptr<const QueueDiscItem>
@@ -407,7 +296,7 @@ CanlendarQueueDisc::GetBandForPriority(uint8_t prio) const
          // create 3 fifo queue discs
          ObjectFactory factory;
          factory.SetTypeId("ns3::FifoQueueDisc");
-         for (uint8_t i = 0; i < 40; i++)
+         for (uint8_t i = 0; i < 20; i++)
          {
              Ptr<QueueDisc> qd = factory.Create<QueueDisc>();
              qd->Initialize();
@@ -432,6 +321,7 @@ CanlendarQueueDisc::GetBandForPriority(uint8_t prio) const
      NS_LOG_FUNCTION(this);
     // 轮转偏移量加1，模队列数量
     m_Bytesbudget[m_rotationOffset] = 0;
+    remain_processing_time[m_rotationOffset] = 0;
     NS_LOG_LOGIC("Cleared byte count for band " << m_rotationOffset);
     ttt = ttt + 1;
     rotation_time = Simulator::Now();
@@ -448,6 +338,7 @@ CanlendarQueueDisc::GetBandForPriority(uint8_t prio) const
      m_rotationOffset = 0;
      m_rotationOffset2 = 0;
      m_Bytesbudget.resize(GetNQueueDiscClasses(), 0);
+     remain_processing_time.resize(GetNQueueDiscClasses(), 0);
     // 每隔10秒轮转一次
      m_rotationEvent = Simulator::Schedule(Seconds(1.0), &CanlendarQueueDisc::RotatePriority, this);
   }

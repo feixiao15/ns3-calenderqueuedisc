@@ -64,9 +64,9 @@
  main(int argc, char* argv[])
  {
      LogComponentEnable("TestTagging", LOG_LEVEL_INFO);
-     LogComponentEnable("CanlendarQueueDisc", LOG_LEVEL_ALL);    
-     LogComponentEnable("OnOffApplication", LOG_LEVEL_INFO);
-     LogComponentEnable("Simulator", LOG_LEVEL_DEBUG);
+     LogComponentEnable("CanlendarQueueDisc", LOG_LEVEL_INFO);    
+    //  LogComponentEnable("OnOffApplication", LOG_LEVEL_DEBUG);
+     LogComponentEnable("Simulator", LOG_LEVEL_INFO);
      uint32_t nLeaf = 2;
      uint32_t maxPackets = 100;
      uint32_t modeBytes = 0;
@@ -77,13 +77,13 @@
      std::string appDataRate = "10Mbps";
      std::string queueDiscType = "PfifoFast";
      uint16_t port = 5001;
-     std::string bottleNeckLinkBw = "0.5Mbps";
+     std::string bottleNeckLinkBw = "2Mbps";
      std::string bottleNeckLinkDelay = "50ms";
      uint16_t rt = 1;
      
      Config::SetDefault(
          "ns3::CanlendarQueueDisc::MaxSize",
-         QueueSizeValue(QueueSize(QueueSizeUnit::BYTES, 62500)));
+         QueueSizeValue(QueueSize(QueueSizeUnit::BYTES, 0.5*10e6/8)));
      
      
 
@@ -144,9 +144,9 @@
      OnOffHelper clientHelper("ns3::UdpSocketFactory", Address());
     //  clientHelper.SetAttribute("OnTime", StringValue("ns3::UniformRandomVariable[Min=0.|Max=1.]"));
     //  clientHelper.SetAttribute("OffTime", StringValue("ns3::UniformRandomVariable[Min=0.|Max=1.]"));
-     clientHelper.SetConstantRate(DataRate("1Mb/s"), 512);
-     clientHelper.SetAttribute("OnTime", StringValue("ns3::ConstantRandomVariable[Constant=1]"));
-     clientHelper.SetAttribute("OffTime", StringValue("ns3::ConstantRandomVariable[Constant=0]"));
+     clientHelper.SetConstantRate(DataRate("4Mb/s"), 512);
+     clientHelper.SetAttribute("OnTime", StringValue("ns3::ConstantRandomVariable[Constant=0.5]"));
+     clientHelper.SetAttribute("OffTime", StringValue("ns3::ConstantRandomVariable[Constant=0.3]"));
     //  clientHelper.SetAttribute("EnableSeqTsSizeHeader",BooleanValue(true));
      Address sinkLocalAddress(InetSocketAddress(Ipv4Address::GetAny(), port));
      PacketSinkHelper packetSinkHelper("ns3::UdpSocketFactory", sinkLocalAddress);
@@ -156,7 +156,7 @@
          sinkApps.Add(packetSinkHelper.Install(d.GetLeft(i)));
      }
      sinkApps.Start(Seconds(0.0));
-     sinkApps.Stop(Seconds(10.0));
+     sinkApps.Stop(Seconds(2.0));
 
      ApplicationContainer clientApps;
      for (uint32_t i = 0; i < d.RightCount(); ++i)
@@ -180,7 +180,7 @@
     //      std::cout << "assssssssssssssssssssssssssssssssssss" << std::endl;
     //  }
 
-     Simulator::Stop(Seconds(1.0));
+     Simulator::Stop(Seconds(2.0));
      std::cout << "Running the simulation" << std::endl;
      Simulator::Run();
 

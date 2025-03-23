@@ -145,8 +145,8 @@
     //  clientHelper.SetAttribute("OnTime", StringValue("ns3::UniformRandomVariable[Min=0.|Max=1.]"));
     //  clientHelper.SetAttribute("OffTime", StringValue("ns3::UniformRandomVariable[Min=0.|Max=1.]"));
      clientHelper.SetConstantRate(DataRate("4Mb/s"), 512);
-     clientHelper.SetAttribute("OnTime", StringValue("ns3::ConstantRandomVariable[Constant=0.5]"));
-     clientHelper.SetAttribute("OffTime", StringValue("ns3::ConstantRandomVariable[Constant=0.3]"));
+     clientHelper.SetAttribute("OnTime", StringValue("ns3::ConstantRandomVariable[Constant=1]"));
+     clientHelper.SetAttribute("OffTime", StringValue("ns3::ConstantRandomVariable[Constant=0]"));
     //  clientHelper.SetAttribute("EnableSeqTsSizeHeader",BooleanValue(true));
      Address sinkLocalAddress(InetSocketAddress(Ipv4Address::GetAny(), port));
      PacketSinkHelper packetSinkHelper("ns3::UdpSocketFactory", sinkLocalAddress);
@@ -156,7 +156,7 @@
          sinkApps.Add(packetSinkHelper.Install(d.GetLeft(i)));
      }
      sinkApps.Start(Seconds(0.0));
-     sinkApps.Stop(Seconds(2.0));
+     sinkApps.Stop(Seconds(20.0));
 
      ApplicationContainer clientApps;
      for (uint32_t i = 0; i < d.RightCount(); ++i)
@@ -180,7 +180,7 @@
     //      std::cout << "assssssssssssssssssssssssssssssssssss" << std::endl;
     //  }
 
-     Simulator::Stop(Seconds(2.0));
+     Simulator::Stop(Seconds(1.01));
      std::cout << "Running the simulation" << std::endl;
      Simulator::Run();
 

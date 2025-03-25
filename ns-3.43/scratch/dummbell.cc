@@ -79,7 +79,7 @@
      uint16_t port = 5001;
      std::string bottleNeckLinkBw = "2Mbps";
      std::string bottleNeckLinkDelay = "50ms";
-     uint16_t rt = 1;
+     uint16_t rt = 3;
      
      Config::SetDefault(
          "ns3::CanlendarQueueDisc::MaxSize",
@@ -180,7 +180,7 @@
     //      std::cout << "assssssssssssssssssssssssssssssssssss" << std::endl;
     //  }
 
-     Simulator::Stop(Seconds(1.01));
+     Simulator::Stop(Seconds(3.01));
      std::cout << "Running the simulation" << std::endl;
      Simulator::Run();
 

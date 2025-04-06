@@ -138,7 +138,7 @@ CanlendarQueueDisc::GetBandForPriority(uint8_t prio) const
  
                 band = (i + m_rotationOffset) % GetNQueueDiscClasses();
                 Time remain_time =  Seconds(1) -(current_enqueue_time - rotation_time);
-                remain_bytes[band] = remain_time.ToDouble(Time::S) * (2*10e6)-csize;
+                remain_bytes[band] = remain_time.ToDouble(Time::S) * (25*10e6)-csize;
                 if(band==m_rotationOffset)
                 {
                     if (m_Bytesbudget[band] + item->GetSize() <= GetMaxSize().GetValue()&&packetSize<=remain_bytes[band])
@@ -263,7 +263,6 @@ CanlendarQueueDisc::GetBandForPriority(uint8_t prio) const
                         return retval;
                     }
                 }
-                // note the packet is overtime
                 NS_LOG_WARN("Queue "<<band<<" is full! Moving packet to next queue."<<(band+1)
                 <<" remainbytes:"<<remain_bytes[band]
                 <<". Queue size: "<<(GetQueueDiscClass(band)->GetQueueDisc()->GetNPackets())

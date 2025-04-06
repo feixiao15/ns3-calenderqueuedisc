@@ -3,6 +3,9 @@
 #include "ns3/tag.h"
 #include "ns3/uinteger.h"
 #include "ns3/log.h"
+#include "ns3/core-module.h"
+
+
 // Add a doxygen group for this module.
 // If you have more than one file, this should be in only one of them.
 /**
@@ -41,12 +44,7 @@ namespace ns3
     class DeadlineTag : public Tag
     {
         public:
-        enum DeadlineType
-        {
-            DDL_1S = 1,
-            DDL_5S = 5,
-            DDL_10S = 10
-        };
+  
 
         static TypeId GetTypeId();
         virtual TypeId GetInstanceTypeId() const;
@@ -55,18 +53,37 @@ namespace ns3
         virtual uint32_t GetSerializedSize() const;
         virtual void Print(std::ostream &os) const;
 
-        void SetDeadline(DeadlineType deadline);
-        DeadlineType GetDeadline() const;
-        uint32_t GetDdlValue(DeadlineType deadline);
+        void SetDeadline(double deadline);
+        double GetDeadline() const;
+
 
 
         private:
-        DeadlineType m_deadline;
-        uint32_t m_ddlvalue;
+        double m_deadline;
+        double m_ddlvalue;
 
     };
 /* ... */
+class DelayTag : public Tag
+{
+public:
 
+  // 注册类型
+  static TypeId GetTypeId (void);
+  virtual TypeId GetInstanceTypeId (void) const;
+
+  // Tag 必须实现的接口：序列化/反序列化、打印、字节大小
+  virtual uint32_t GetSerializedSize (void) const;
+  virtual void Serialize (TagBuffer i) const;
+  virtual void Deserialize (TagBuffer i);
+  virtual void Print (std::ostream &os) const;
+
+  // 设置和获取时间戳
+  void SetTimestamp (Time t);
+  Time GetTimestamp (void) const;
+
+private:
+  Time m_timestamp;
+};
 }
-
 #endif /* TAGS_H */

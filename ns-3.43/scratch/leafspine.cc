@@ -1,23 +1,25 @@
-
 #include "ns3/core-module.h"
 #include "ns3/network-module.h"
 #include "ns3/internet-module.h"
 #include "ns3/point-to-point-module.h"
-#include "ns3/point-to-point-layout-module.h"
-#include "ns3/applications-module.h"
-#include "ns3/tags.h"
 #include "ns3/traffic-control-module.h"
-#include <iostream>
-#include "ns3/socket.h"
-#include "ns3/trace-source-accessor.h"
+#include "ns3/applications-module.h"
+#include "ns3/ipv4-address-helper.h"
+#include "ns3/ipv4-global-routing-helper.h"
+#include "ns3/queue-disc.h"
+#include "ns3/queue-disc-container.h"
 #include "ns3/random-variable-stream.h"
+#include <iostream>
+#include <vector>
+#include "ns3/tags.h"
+
 using namespace ns3;
 
-NS_LOG_COMPONENT_DEFINE ("TestTag");
+NS_LOG_COMPONENT_DEFINE ("LeafSpineSenderReceiver");
 
-/************************************************************
- *              StopAndWaitReceiver 类
- ************************************************************/
+//************************************************************
+//           StopAndWaitReceiver 类定义
+//************************************************************
 class StopAndWaitReceiver : public Application
 {
 public:
@@ -390,139 +392,182 @@ private:
 };
 
 
-
-
+//************************************************************
+//                       main()
+//************************************************************
 int main (int argc, char *argv[])
 {
-  // 启用日志组件
-  //LogComponentEnable ("TestTag", LOG_LEVEL_INFO);
-  LogComponentEnable("CanlendarQueueDisc", LOG_LEVEL_ALL);  
-  // LogComponentEnable("FifoQueueDisc",LOG_ALL);
+  //LogComponentEnable ("LeafSpineSenderReceiver", LOG_LEVEL_INFO);
+  //LogComponentEnable ("CanlendarQueueDisc", LOG_LEVEL_ALL);
+  //LogComponentEnable ("FifoQueueDisc", LOG_LEVEL_ALL);
+
   CommandLine cmd;
   cmd.Parse (argc, argv);
 
-  /*DUMMBELL*/
-  uint32_t nLeaf =8;
-  uint32_t maxPackets = 400;
-  std::string leafBw = "100Gbps";
-
-  std::string bottleNeckLinkBw = "25Gbps";
-  std::string bottleNeckLinkDelay = "1ms";
-  float rt = 0.01;
-  bool statement = true;
-  uint32_t qz = 25*1*10e9/8;
-  uint32_t flownum = 100;
-  
-  Config::SetDefault(
-      "ns3::CanlendarQueueDisc::MaxSize",
-      QueueSizeValue(QueueSize(QueueSizeUnit::BYTES, qz)));
+  bool statement = true; 
+  float rt = 0.01;      
+  uint32_t qz = 100;   
+  uint32_t numd = 40000;
+  uint32_t nump = 100;
+  uint32_t flowsPerHost = 100;  
+  uint32_t hostsPerLeaf = 8; 
+  uint32_t numLeaves = 4;
 
 
-PointToPointHelper bottleNeckLink;
-bottleNeckLink.SetDeviceAttribute("DataRate", StringValue(bottleNeckLinkBw));
-bottleNeckLink.SetChannelAttribute("Delay", StringValue(bottleNeckLinkDelay));
-bottleNeckLink.SetDeviceAttribute("Mtu", UintegerValue(9000));
-PointToPointHelper pointToPointLeaf;
-pointToPointLeaf.SetDeviceAttribute("DataRate", StringValue(leafBw));
-pointToPointLeaf.SetChannelAttribute("Delay", StringValue("1ms"));
-pointToPointLeaf.SetDeviceAttribute("Mtu", UintegerValue(9000));
+  NodeContainer spineNodes;
+  spineNodes.Create (2);
+  NodeContainer leafNodes;
+  leafNodes.Create (numLeaves);
 
-PointToPointDumbbellHelper d(nLeaf, pointToPointLeaf, nLeaf, pointToPointLeaf, bottleNeckLink);
+  NodeContainer hostNodes;
+  hostNodes.Create (numLeaves*hostsPerLeaf);
+
+  // 安装 Internet 协议栈
+  InternetStackHelper internet;
+  internet.Install (spineNodes);
+  internet.Install (leafNodes);
+  internet.Install (hostNodes);
+
+  // (a) leaf 与 spine 之间链路
+  PointToPointHelper p2pLeafSpine;
+  p2pLeafSpine.SetDeviceAttribute ("DataRate", StringValue ("100Gbps"));
+  p2pLeafSpine.SetChannelAttribute ("Delay", StringValue ("1ms"));
+  // (b) leaf 与 host 之间链路
+  PointToPointHelper p2pLeafHost;
+  p2pLeafHost.SetDeviceAttribute ("DataRate", StringValue ("25Gbps"));
+  p2pLeafHost.SetChannelAttribute ("Delay", StringValue ("1ms"));
+
+  // 用于分配 IP 地址
+  Ipv4AddressHelper address;
+  uint32_t networkId = 1;
 
 
-InternetStackHelper stack;
-for (uint32_t i = 0; i < d.LeftCount(); ++i)
-{
-    stack.Install(d.GetLeft(i));
-}
-for (uint32_t i = 0; i < d.RightCount(); ++i)
-{
-    stack.Install(d.GetRight(i));
-}
-stack.Install(d.GetLeft());
-stack.Install(d.GetRight());
-
-
-  TrafficControlHelper tchBottleneck;
-  if(statement==true){
-  tchBottleneck.SetRootQueueDisc("ns3::FifoQueueDisc");}
-  // tchBottleneck.SetRootQueueDisc("ns3::RedQueueDisc");
-  else{
-  tchBottleneck.SetRootQueueDisc("ns3::CanlendarQueueDisc");}
-  //tchBottleneck.SetRootQueueDisc("ns3::PfifoFastQueueDisc");
-
-  // // // // 在设备上安装调度器
-   QueueDiscContainer qdiscs;
-   qdiscs.Add(tchBottleneck.Install(d.GetLeft()->GetDevice(0)));
-   qdiscs.Add(tchBottleneck.Install(d.GetRight()->GetDevice(0)));
-
-   for (uint32_t i = 0; i < qdiscs.GetN(); ++i)
-   {
-       Ptr<QueueDisc> qdisc = qdiscs.Get(i);
-       if (statement==true){
-        Ptr<FifoQueueDisc> fifoQ = DynamicCast<FifoQueueDisc>(qdisc);
-        if (fifoQ)
-        {
-         std::cout<<"setmaxdone";
-         fifoQ->SetAttribute("MaxSize", QueueSizeValue(QueueSize(QueueSizeUnit::PACKETS, 10e20)));
-        }
-       }
-
-       else{
-       Ptr<CanlendarQueueDisc> canlendarQ = DynamicCast<CanlendarQueueDisc>(qdisc);
-        QueueSize maxSize = canlendarQ->GetMaxSize();
-        std::cout << "size" << maxSize <<std::endl;
-        if (canlendarQ)
-        {
-            canlendarQ->SetAttribute("RotationInterval", TimeValue(Seconds(rt))); 
-            canlendarQ->SetQSize(qz);
-            std::cout << "time" << rt <<std::endl;
-        }
-      }
-   }
-   // Assign IP Addresses
-   d.AssignIpv4Addresses(Ipv4AddressHelper("10.1.1.0", "255.255.255.0"),
-   Ipv4AddressHelper("10.2.1.0", "255.255.255.0"),
-   Ipv4AddressHelper("10.3.1.0", "255.255.255.0"));
-   Ipv4GlobalRoutingHelper::PopulateRoutingTables();
-   uint16_t basePort = 5001;
-   std::vector< Ptr<StopAndWaitSender> > senderApps;
-   std::vector< Ptr<StopAndWaitReceiver> > receiverApps;
-   for (uint32_t i = 0; i < d.LeftCount(); ++i)
-   {
-    for (uint32_t j = 0; j < flownum; ++j)
+  TrafficControlHelper tch;
+  if (statement)
     {
-        uint16_t port = basePort + i * 100 + j;
-  
-
-
-        Ptr<Node> senderNode = d.GetLeft(i);
-        Ptr<Node> receiverNode = d.GetRight(j % d.RightCount());
-        Ptr<StopAndWaitReceiver> receiverApp = CreateObject<StopAndWaitReceiver>();
-        receiverApp->Setup(d.GetRightIpv4Address(j % d.RightCount()), port);
-        receiverNode->AddApplication(receiverApp);
-        receiverApps.push_back(receiverApp);
-        receiverApp->SetStartTime(Seconds(0));
-        receiverApp->SetStopTime(Seconds(500.0));
-
-        Ptr<StopAndWaitSender> senderApp = CreateObject<StopAndWaitSender>();
-        senderApp->Setup(d.GetRightIpv4Address(j % d.RightCount()), port, 1700*5, 5*512, maxPackets,1);
-        senderNode->AddApplication(senderApp);
-        senderApps.push_back(senderApp);
-
-        Ptr<ExponentialRandomVariable> interval = CreateObject<ExponentialRandomVariable>();
-        interval->SetAttribute("Mean", DoubleValue(1.0 / 100));
-        double nextInterval = interval->GetValue();
-        senderApp->SetStartTime(Seconds(nextInterval));
-        senderApp->SetStopTime(Seconds(500.0));
+      tch.SetRootQueueDisc ("ns3::FifoQueueDisc");
     }
+  else
+    {
+      tch.SetRootQueueDisc ("ns3::CanlendarQueueDisc");
+    }
+
+
+  // 构建 leaf-spine 链路
+  // 为每个 leaf 与每个 spine 之间建立 p2p 链路，并在链路设备上安装队列调度器
+  QueueDiscContainer qdiscsInstalled;
+  for (uint32_t i = 0; i < leafNodes.GetN (); ++i)
+    {
+      for (uint32_t j = 0; j < spineNodes.GetN (); ++j)
+        {
+          NodeContainer pair (leafNodes.Get (i), spineNodes.Get (j));
+          NetDeviceContainer devices = p2pLeafSpine.Install (pair);
+
+          QueueDiscContainer qdiscs;
+          qdiscs.Add (tch.Install (devices.Get (0)));
+          qdiscs.Add (tch.Install (devices.Get (1)));
+          qdiscsInstalled.Add (qdiscs);
+          for (uint32_t k = 0; k < qdiscs.GetN (); ++k)
+            {
+              Ptr<QueueDisc> qdisc = qdiscs.Get (k);
+              if (statement)
+                {
+                  Ptr<FifoQueueDisc> fifoQ = DynamicCast<FifoQueueDisc> (qdisc);
+                  if (fifoQ)
+                    {
+                      fifoQ->SetAttribute ("MaxSize", QueueSizeValue (QueueSize (QueueSizeUnit::PACKETS, 10e20)));
+                    }
+                }
+              else
+                {
+                  Ptr<CanlendarQueueDisc> calQ = DynamicCast<CanlendarQueueDisc> (qdisc);
+                  if (calQ)
+                    {
+                      calQ->SetAttribute ("RotationInterval", TimeValue (Seconds (rt)));
+                      calQ->SetQSize (qz);
+                    }
+                }
+            }
+
+          std::ostringstream subnet;
+          subnet << "10." << networkId << ".0.0";
+          address.SetBase (Ipv4Address (subnet.str ().c_str ()), "255.255.255.0");
+          address.Assign (devices);
+          networkId++;
+        }
+    }
+
+  // 构建 leaf-host 链路
+  std::vector<Ipv4Address> hostAddresses;
+ 
+  for (uint32_t i = 0; i < leafNodes.GetN (); ++i)
+  {
+      for (uint32_t j = 0; j < 4; ++j)
+      {
+          uint32_t hostIndex = i * 4 + j;
+          NodeContainer pair (leafNodes.Get (i), hostNodes.Get (hostIndex));
+          NetDeviceContainer devices = p2pLeafHost.Install (pair);
+          std::ostringstream subnet;
+          subnet << "10." << networkId << ".0.0";
+          address.SetBase (Ipv4Address (subnet.str ().c_str ()), "255.255.255.0");
+          Ipv4InterfaceContainer ifCont = address.Assign (devices);
+          // 设备0在 leaf，设备1在 host，记录 host 的 IP 地址
+          hostAddresses.push_back (ifCont.GetAddress (1));
+          networkId++;
+      }
   }
+
+
+  Ipv4GlobalRoutingHelper::PopulateRoutingTables ();
+
+uint16_t basePort = 5001;
+
+std::vector< Ptr<StopAndWaitSender> > senderApps;
+std::vector< Ptr<StopAndWaitReceiver> > receiverApps;
+uint32_t numHosts = hostNodes.GetN();
+
+//receiver apps
+for (uint32_t i = 0; i < numHosts; ++i)
+{
+    for (uint32_t j = 0; j < flowsPerHost; ++j)
+    {
+        uint16_t port = basePort + i * flowsPerHost + j;
+        Ptr<StopAndWaitReceiver> receiverApp = CreateObject<StopAndWaitReceiver> ();
+        receiverApp->Setup (hostAddresses[i], port);
+        hostNodes.Get(i)->AddApplication(receiverApp);
+        receiverApp->SetStartTime (Seconds(0.0));
+        receiverApp->SetStopTime (Seconds(500.0));
+        receiverApps.push_back(receiverApp);
+    }
+}
+//sender apps
+for (uint32_t i = 0; i < numHosts; ++i)
+{
+    uint32_t myLeaf = i / hostsPerLeaf;
+    uint32_t offset = i % hostsPerLeaf;
+    uint32_t remoteLeaf = (myLeaf + 1) % numLeaves; 
+    uint32_t remoteIndex = remoteLeaf * hostsPerLeaf + offset; 
+
+    for (uint32_t j = 0; j < flowsPerHost; ++j)
+    {
+        uint16_t port = basePort + remoteIndex * flowsPerHost + j;
+        Ptr<StopAndWaitSender> senderApp = CreateObject<StopAndWaitSender> ();
+        senderApp->Setup (hostAddresses[remoteIndex], port, 1700 * 5, 5 * 512, numd, nump);
+        hostNodes.Get(i)->AddApplication(senderApp);
+        Ptr<ExponentialRandomVariable> interval = CreateObject<ExponentialRandomVariable> ();
+        interval->SetAttribute ("Mean", DoubleValue (1.0 / 100));
+        double nextInterval = interval->GetValue ();
+        senderApp->SetStartTime (Seconds (nextInterval));
+        senderApp->SetStopTime (Seconds (500.0));
+        senderApps.push_back(senderApp);
+    }
+}
+
 
   Simulator::Stop (Seconds (500.0));
   Simulator::Run ();
   Simulator::Destroy ();
 
-  // 仿真结束后，输出所有应用的统计数据
   std::cout << "========== Statistics ==========" << std::endl;
   for (uint32_t i = 0; i < senderApps.size (); i++)
     {
@@ -533,7 +578,7 @@ stack.Install(d.GetRight());
       receiverApps[i]->ReportStatistics ();
     }
   std::cout << "================================" << std::endl;
-// 统计所有流的耗时，计算平均耗时和最大耗时
+  // 统计所有流的耗时，计算平均耗时和最大耗时
   Time totalElapsed = Seconds(0);
   Time maxElapsed = Seconds(0);
   Time minElapsed = Seconds(500);
@@ -570,7 +615,7 @@ stack.Install(d.GetRight());
       double avgElapsed = totalElapsed.GetSeconds() / validFlows;
       double avgpt = totalpt.GetSeconds()/validFlows2;
       std::cout << "Average flow elapsed time: " << avgElapsed << " s" << std::endl;
-      std::cout << "Average flow preill time: " << avgpt << " s" << std::endl;
+      // std::cout << "Average flow preill time: " << avgpt << " s" << std::endl; //maybe it's wrong
       std::cout << "Max flow elapsed time: " << maxElapsed.GetSeconds() << " s" << std::endl;
       std::cout << "Min flow elapsed time: " << minElapsed.GetSeconds() << " s" << std::endl;
   }
@@ -578,9 +623,10 @@ stack.Install(d.GetRight());
   {
       std::cout << "No valid flows were recorded." << std::endl;
   }
-  for (uint32_t i = 0; i < qdiscs.GetN(); i++)
+
+  for (uint32_t i = 0; i < qdiscsInstalled.GetN(); i++)
   {
-      Ptr<QueueDisc> qdisc = qdiscs.Get(i);
+      Ptr<QueueDisc> qdisc = qdiscsInstalled.Get(i);
       if(statement==true){
       Ptr<FifoQueueDisc> fifoQueue = DynamicCast<FifoQueueDisc>(qdisc);
       if (fifoQueue)
@@ -594,5 +640,7 @@ stack.Install(d.GetRight());
           cQueue->ReportTimeoutStatistics();
       }}
   }
+
+
   return 0;
 }

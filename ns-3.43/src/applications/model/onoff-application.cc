@@ -395,16 +395,16 @@ OnOffApplication::SendPacket()
         switch (choice)
         {
         case 0:
-            ddlTag.SetDeadline(DeadlineTag::DDL_1S);
+            ddlTag.SetDeadline(1);
             break;
         case 1:
-            ddlTag.SetDeadline(DeadlineTag::DDL_5S);
+            ddlTag.SetDeadline(5);
             break;
         case 2:
-            ddlTag.SetDeadline(DeadlineTag::DDL_10S);
+            ddlTag.SetDeadline(10);
             break;
         default:
-            ddlTag.SetDeadline(DeadlineTag::DDL_5S);
+            ddlTag.SetDeadline(5);
             break;
         }
         packet->AddPacketTag(ddlTag);

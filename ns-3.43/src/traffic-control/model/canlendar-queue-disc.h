@@ -3,7 +3,7 @@
 
 #include "ns3/queue-disc.h"
 #include "ns3/event-id.h"
- 
+ #include "ns3/core-module.h"
  #include <array>
  
  namespace ns3
@@ -60,7 +60,8 @@
       * \returns the band assigned to packets.
       */
      uint16_t GetBandForPriority(uint8_t prio) const;
- 
+     void ReportTimeoutStatistics () const;
+     void SetQSize(uint32_t size);
    private:
      bool DoEnqueue(Ptr<QueueDiscItem> item) override;
      Ptr<QueueDiscItem> DoDequeue() override;
@@ -78,6 +79,13 @@
      uint32_t maxQueueSize;
      std::vector<uint32_t> m_Bytesbudget; 
      std::vector<double> remain_bytes;
+     Time m_timeoutThreshold;
+     uint32_t m_timeoutCount;
+     Time m_totalQueueDelay;
+     uint32_t m_dequeuedPackets;
+     Time m_pt;
+     uint32_t m_prefillpacket;
+     uint32_t qsize;
 
  };
  

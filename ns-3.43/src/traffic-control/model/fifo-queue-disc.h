@@ -40,13 +40,19 @@ class FifoQueueDisc : public QueueDisc
     // Reasons for dropping packets
     static constexpr const char* LIMIT_EXCEEDED_DROP =
         "Queue disc limit exceeded"; //!< Packet dropped due to queue disc limit exceeded
-
+    void ReportTimeoutStatistics () const;
   private:
     bool DoEnqueue(Ptr<QueueDiscItem> item) override;
     Ptr<QueueDiscItem> DoDequeue() override;
     Ptr<const QueueDiscItem> DoPeek() override;
     bool CheckConfig() override;
     void InitializeParams() override;
+    Time m_timeoutThreshold;
+    uint32_t m_timeoutCount;
+    Time m_totalQueueDelay;
+    Time m_pt;
+    uint32_t m_prefillpacket;
+    uint32_t m_dequeuedPackets;
 };
 
 } // namespace ns3

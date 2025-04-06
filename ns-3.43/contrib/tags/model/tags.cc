@@ -1,5 +1,5 @@
 #include "tags.h"
-
+#include "ns3/core-module.h"
 namespace ns3
 {
     TypeId FlowTypeTag::GetTypeId()
@@ -47,60 +47,101 @@ namespace ns3
     
     /* ---------- DeadlineTag 实现 ---------- */
     TypeId DeadlineTag::GetTypeId()
-    {
-       static TypeId tid = TypeId("ns3::DeadlineTag")
-           .SetParent<Tag>()
-           .AddConstructor<DeadlineTag>();
-       return tid;
-    }
-    
-    TypeId DeadlineTag::GetInstanceTypeId() const
-    {
-       return GetTypeId();
-    }
-    
-    void DeadlineTag::Serialize(TagBuffer i) const
-    {
-       i.WriteU8(m_deadline);
-    }
-    
-    void DeadlineTag::Deserialize(TagBuffer i)
-    {
-       m_deadline = static_cast<DeadlineType>(i.ReadU8());
-    }
-    
-    uint32_t DeadlineTag::GetSerializedSize() const
-    {
-       return 1;
-    }
-    
-    void DeadlineTag::Print(std::ostream &os) const
-    {
-       os << "Deadline=" << static_cast<uint32_t>(m_deadline) << "s";
-    }
-    
-    void DeadlineTag::SetDeadline(DeadlineType deadline)
-    {
-       m_deadline = deadline;
-    }
-    
-    DeadlineTag::DeadlineType DeadlineTag::GetDeadline() const
-    {
-       return m_deadline;
-    }
-    uint32_t DeadlineTag::GetDdlValue(DeadlineType ddl)
-    {
-       if (ddl == DeadlineTag::DDL_1S){
-             m_ddlvalue = 1;
-       }
-       if (ddl == DeadlineTag::DDL_5S){
-             m_ddlvalue = 5;
-       }
-       if (ddl == DeadlineTag::DDL_10S){
-             m_ddlvalue = 10;
-       }
-       return m_ddlvalue;
-    }
-/* ... */
+{
+  static TypeId tid = TypeId("ns3::DeadlineTag")
+    .SetParent<Tag>()
+    .AddConstructor<DeadlineTag>();
+  return tid;
+}
 
+TypeId DeadlineTag::GetInstanceTypeId() const
+{
+  return GetTypeId();
+}
+
+void DeadlineTag::Serialize(TagBuffer i) const
+{
+  i.WriteDouble(m_deadline);
+}
+
+void DeadlineTag::Deserialize(TagBuffer i)
+{
+  m_deadline = i.ReadDouble();
+}
+
+uint32_t DeadlineTag::GetSerializedSize() const
+{
+  return sizeof(double);
+}
+
+void DeadlineTag::Print(std::ostream &os) const
+{
+  os << "Deadline=" << m_deadline << "s";
+}
+
+void DeadlineTag::SetDeadline(double deadline)
+{
+  m_deadline = deadline;
+}
+
+double DeadlineTag::GetDeadline() const
+{
+  return m_deadline;
+}
+
+
+/* ... */
+TypeId
+DelayTag::GetTypeId (void)
+{
+  static TypeId tid = TypeId ("ns3::DelayTag")
+    .SetParent<Tag> ()
+    .AddConstructor<DelayTag> ();
+  return tid;
+}
+
+TypeId
+DelayTag::GetInstanceTypeId (void) const
+{
+  return GetTypeId ();
+}
+
+uint32_t
+DelayTag::GetSerializedSize (void) const
+{
+  // 使用 double 存储时间戳，共 8 字节
+  return 8;
+}
+
+void
+DelayTag::Serialize (TagBuffer i) const
+{
+  double t = m_timestamp.GetSeconds ();
+  i.WriteDouble (t);
+}
+
+void
+DelayTag::Deserialize (TagBuffer i)
+{
+  double t = i.ReadDouble ();
+  m_timestamp = Seconds (t);
+}
+
+void
+DelayTag::Print (std::ostream &os) const
+{
+  os << "timestamp=" << m_timestamp.GetSeconds ();
+}
+
+void
+DelayTag::SetTimestamp (Time t)
+{
+  m_timestamp = t;
+}
+
+Time
+DelayTag::GetTimestamp (void) const
+{
+  return m_timestamp;
+}
 }
